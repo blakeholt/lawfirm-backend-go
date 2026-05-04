@@ -20,7 +20,7 @@ type LoginUserPayload struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type CreateUserPayload struct {
+type UserPayload struct {
 	FirstName   string `json:"firstName" validate:"required"`
 	LastName    string `json:"lastName" validate:"required"`
 	PhoneNumber string `json:"phoneNumber"`
@@ -31,8 +31,9 @@ type CreateUserPayload struct {
 }
 
 type UserStore interface {
-	GetUserByEmail(email string) (*User, error)
-	GetUserByID(id int) (*User, error)
+	GetUserByEmail(string) (*User, error)
+	GetUserByID(int) (*User, error)
+	GetAllUsers() ([]User, error)
 	CreateUser(User) error
 	UpdateUser(User) error
 }
@@ -46,6 +47,19 @@ type Client struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+type ClientPayload struct {
+	Name        string `json:"name" validate:"required"`
+	PhoneNumber string `json:"phoneNumber"`
+	Email       string `json:"email" validate:"required,email"`
+}
+
+type ClientStore interface {
+	GetClientByID(int) (*Client, error)
+	GetAllClients() ([]Client, error)
+	CreateClient(Client) error
+	UpdateClient(Client) error
+}
+
 // Case
 type Case struct {
 	ID          int            `json:"id"`
@@ -56,12 +70,12 @@ type Case struct {
 	Status      string         `json:"Status"`
 	Documents   []CaseDocument `json:"documents"`
 	Notes       []CaseNote     `json:"notes"`
+	Visible     bool           `json:"visible"`
 	OpenedDate  time.Time      `json:"openedDate"`
 	ClosedDate  time.Time      `json:"closedDate"`
 	CreatedAt   time.Time      `json:"createdAt"`
 }
 
-// Case Document
 type CaseDocument struct {
 	ID        int       `json:"id"`
 	CaseID    int       `json:"caseId"`
@@ -71,10 +85,40 @@ type CaseDocument struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-// Case Note
 type CaseNote struct {
 	ID        int       `json:"id"`
 	CaseID    int       `json:"caseId"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+type CaseNotePayload struct {
+	CaseID  int    `json:"caseId" validate:"required"`
+	Content string `json:"content" validate:"required"`
+}
+
+type CaseDocumentPayload struct {
+	CaseID   int    `json:"caseId" validate:"required"`
+	FileName string `json:"fileName" validate:"required"`
+	FileType string `json:"fileType" validate:"required"`
+}
+
+type CaseStore interface {
+	GetCaseByID(int) (*Case, error)
+	GetCaseByCaseNumber(string) (*Case, error)
+
+	GetCasesByUserID(int) ([]Case, error)
+	GetCasesByClientID(int) ([]Case, error)
+
+	CreateCaseAssignment(userID int, caseID int) error
+	UpdateCaseAssignment(userID int, caseID int) error
+	DeleteCaseAssignment(userID int, caseID int) error
+
+	CreateCase(Case) error
+	CreateCaseNote(int, CaseNote) error
+	CreateCaseDocument(int, CaseDocument) error
+
+	UpdateCase(Case) error
+	UpdateCaseNote(int, CaseNote) error
+	UpdateCaseDocument(int, CaseDocument)
 }
