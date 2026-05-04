@@ -7,8 +7,8 @@ type User struct {
 	ID          int       `json:"id"`
 	FirstName   string    `json:"firstName"`
 	LastName    string    `json:"lastName"`
-	PhoneNumber string    `json:"phoneNumber"`
 	Email       string    `json:"email"`
+	PhoneNumber string    `json:"phoneNumber"`
 	Password    string    `json:"password"`
 	Avatar      string    `json:"avatar"`
 	Role        string    `json:"role"`
@@ -23,8 +23,8 @@ type LoginUserPayload struct {
 type UserPayload struct {
 	FirstName   string `json:"firstName" validate:"required"`
 	LastName    string `json:"lastName" validate:"required"`
-	PhoneNumber string `json:"phoneNumber"`
 	Email       string `json:"email" validate:"required,email"`
+	PhoneNumber string `json:"phoneNumber"`
 	Password    string `json:"password" validate:"required,min=3,max=72"`
 	Avatar      string `json:"avatar"`
 	Role        string `json:"role" validate:"required"`
@@ -36,6 +36,7 @@ type UserStore interface {
 	GetAllUsers() ([]User, error)
 	CreateUser(User) error
 	UpdateUser(User) error
+	DeleteUser(int) error
 }
 
 // Client
