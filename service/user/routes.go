@@ -2,6 +2,8 @@ package user
 
 import (
 	"fmt"
+	"lawfirm-go-backend/config"
+	"lawfirm-go-backend/service/auth"
 	"lawfirm-go-backend/types"
 	"lawfirm-go-backend/utils"
 	"net/http"
@@ -20,10 +22,10 @@ func NewHandler(store types.UserStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/login", h.handleLogin).Methods("POST")
-	router.HandleFunc("/user", h.handleGetUser).Methods("GET")
-	router.HandleFunc("/user", h.handleCreateUser).Methods("POST")
-	router.HandleFunc("/user", h.handleUpdateUser).Methods("PUT")
-	router.HandleFunc("/user", h.handleDeleteUser).Methods("DELETE")
+	router.HandleFunc("/user", auth.WithJWTAuth(h.handleGetUser, h.store, false)).Methods("GET")
+	router.HandleFunc("/user", auth.WithJWTAuth(h.handleCreateUser, h.store, true)).Methods("POST")
+	router.HandleFunc("/user", auth.WithJWTAuth(h.handleUpdateUser, h.store, false)).Methods("PUT")
+	router.HandleFunc("/user", auth.WithJWTAuth(h.handleDeleteUser, h.store, true)).Methods("DELETE")
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -44,13 +46,23 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// Validate that the user exists
 	u, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("Invalid Email or Password"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("Invalid Email or Password 1"))
 		return
 	}
 
-	// TODO: Add Authentication
+	// Validate the entered password against the users hashed password
+	if !auth.ComparePasswords(u.Password, []byte(payload.Password)) {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email or password 2"))
+		return
+	}
+	secret := []byte(config.Envs.JWTSecret)
+	token, err := auth.CreateJWT(secret, u.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"token": u.Email})
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
 func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +88,11 @@ func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If user doesn't exist, create new user
-	hashedPassword := payload.Password // TODO: Hash password
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	err = h.store.CreateUser(types.User{
 		FirstName:   payload.FirstName,
@@ -127,7 +143,11 @@ func (h *Handler) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If user exists, Update user
-	hashedPassword := payload.Password // TODO: Hash password
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	err = h.store.UpdateUser(types.User{
 		ID:          u.ID,
