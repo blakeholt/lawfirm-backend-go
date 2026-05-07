@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"lawfirm-go-backend/service/client"
 	"lawfirm-go-backend/service/home"
 	"lawfirm-go-backend/service/user"
 	"log"
@@ -33,6 +34,10 @@ func (s *APIServer) Run() error {
 	userStore := user.NewStore(s.db)
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
+
+	clientStore := client.NewStore(s.db)
+	clientHandler := client.NewHandler(clientStore, userStore)
+	clientHandler.RegisterRoutes(subrouter)
 
 	log.Println("Listening on", s.addr)
 

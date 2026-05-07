@@ -56,9 +56,11 @@ type ClientPayload struct {
 
 type ClientStore interface {
 	GetClientByID(int) (*Client, error)
+	GetClientByEmail(string) (*Client, error)
 	GetAllClients() ([]Client, error)
 	CreateClient(Client) error
 	UpdateClient(Client) error
+	DeleteClient(int) error
 }
 
 // Case

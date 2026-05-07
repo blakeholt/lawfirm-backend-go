@@ -22,7 +22,7 @@ func NewHandler(store types.UserStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/login", h.handleLogin).Methods("POST")
-	router.HandleFunc("/user", auth.WithJWTAuth(h.handleGetUser, h.store, false)).Methods("GET")
+	router.HandleFunc("/user", auth.WithJWTAuth(h.handleGetAllUsers, h.store, false)).Methods("GET")
 	router.HandleFunc("/user", auth.WithJWTAuth(h.handleCreateUser, h.store, true)).Methods("POST")
 	router.HandleFunc("/user", auth.WithJWTAuth(h.handleUpdateUser, h.store, false)).Methods("PUT")
 	router.HandleFunc("/user", auth.WithJWTAuth(h.handleDeleteUser, h.store, true)).Methods("DELETE")
@@ -110,7 +110,7 @@ func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, nil)
 }
 
-func (h *Handler) handleGetUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleGetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.store.GetAllUsers()
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
